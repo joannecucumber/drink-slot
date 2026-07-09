@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="回答四個口味問題，從 36 款台灣手搖飲撈出命中菜單，最後用拉霸機自己按停決定今天喝什麼。">
+<meta property="og:title" content="今天喝什麼 — 手搖飲拉霸所">
+<meta property="og:description" content="不是純隨機：先問口味再抽，一杯自己按停。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
+<title>今天喝什麼 — 手搖飲拉霸所</title>
+</head>
+<body>
+<style>
+  :root{
+    --ink:#17100C;
+    --panel:#241A12;
+    --panel-2:#2E2115;
+    --line:#4A3A28;
+    --cream:#F4E9D6;
+    --cream-dim:#C9B99E;
+    --gold:#FFB428;
+    --gold-deep:#D98E0B;
+    --pearl:#8A5A33;
+    --leaf:#9CBF57;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(120% 90% at 50% 0%, #241a12 0%, var(--ink) 60%),
+      var(--ink);
+    color:var(--cream);
+    font-family:"PingFang TC","Hiragino Sans TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  #pearls{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5}
+  .frame{
+    position:relative;z-index:1;
+    max-width:430px;margin:0 auto;
+    min-height:100dvh;
+    display:flex;flex-direction:column;
+    padding:28px 20px 40px;
+  }
+  /* ---------- 通用 ---------- */
+  .eyebrow{
+    font-size:11px;letter-spacing:.35em;color:var(--gold);
+    text-transform:uppercase;font-weight:600;
+  }
+  .screen{display:none;flex:1;flex-direction:column}
+  .screen.on{display:flex;animation:rise .38s cubic-bezier(.2,.8,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .btn{
+    appearance:none;border:0;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:17px;
+    border-radius:999px;padding:16px 22px;
+    background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+    color:var(--ink);width:100%;
+    box-shadow:0 6px 0 rgba(0,0,0,.35), 0 0 32px rgba(255,180,40,.18);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.35)}
+  .btn.ghost{
+    background:transparent;color:var(--cream-dim);
+    box-shadow:inset 0 0 0 1.5px var(--line);
+    font-weight:600;font-size:15px;padding:13px 22px;
+  }
+  .btn:focus-visible,.opt:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+  /* ---------- 開場 ---------- */
+  #intro{justify-content:center;text-align:center;gap:0}
+  .signboard{
+    margin:0 auto 28px;padding:34px 26px 30px;width:100%;
+    background:linear-gradient(180deg,#2E2115,#241A12);
+    border:1.5px solid var(--line);border-radius:22px;
+    box-shadow:0 0 60px rgba(255,180,40,.10), inset 0 1px 0 rgba(244,233,214,.08);
+  }
+  .signboard h1{
+    font-size:44px;font-weight:900;line-height:1.18;
+    letter-spacing:.06em;text-wrap:balance;
+    text-shadow:0 0 26px rgba(255,180,40,.35);
+  }
+  .signboard h1 em{font-style:normal;color:var(--gold)}
+  .signboard .sub{margin-top:14px;color:var(--cream-dim);font-size:14px;line-height:1.7}
+  .marquee{
+    display:flex;gap:8px;justify-content:center;margin-top:22px;
+  }
+  .marquee i{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--pearl);
+    animation:blink 1.6s infinite;
+  }
+  .marquee i:nth-child(2n){animation-delay:.4s;background:var(--gold)}
+  .marquee i:nth-child(3n){animation-delay:.8s}
+  @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+  .intro-note{margin-top:16px;font-size:12.5px;color:var(--cream-dim);letter-spacing:.08em}
+  /* ---------- 問答 ---------- */
+  .quiz-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+  .cup-progress{display:flex;gap:7px}
+  .cup-progress i{
+    width:12px;height:12px;border-radius:50%;
+    background:transparent;border:1.5px solid var(--line);
+    transition:background .3s,border-color .3s;
+  }
+  .cup-progress i.full{background:var(--pearl);border-color:var(--pearl)}
+  .cup-progress i.now{border-color:var(--gold)}
+  .q-title{
+    font-size:27px;font-weight:900;line-height:1.35;margin:14px 0 4px;
+    text-wrap:balance;letter-spacing:.02em;
+  }
+  .q-hint{color:var(--cream-dim);font-size:13.5px;margin-bottom:22px}
+  .opts{display:flex;flex-direction:column;gap:12px}
+  .opt{
+    appearance:none;cursor:pointer;text-align:left;width:100%;
+    font-family:inherit;color:var(--cream);
+    background:var(--panel);border:1.5px solid var(--line);
+    border-radius:var(--radius);padding:16px 18px;
+    display:flex;align-items:center;gap:14px;
+    transition:border-color .15s, background .15s, transform .12s;
+  }
+  .opt:active{transform:scale(.98)}
+  .opt .tag{
+    flex:none;width:44px;height:44px;border-radius:12px;
+    display:grid;place-items:center;
+    background:var(--panel-2);border:1px solid var(--line);
+    font-weight:900;font-size:18px;color:var(--gold);
+  }
+  .opt b{display:block;font-size:16.5px;font-weight:800;letter-spacing:.02em}
+  .opt span{display:block;font-size:12.5px;color:var(--cream-dim);margin-top:3px;line-height:1.5}
+  .opt.picked{border-color:var(--gold);background:#33250F;box-shadow:0 0 24px rgba(255,180,40,.12)}
+  /* ---------- 菜單 ---------- */
+  .menu-list{display:flex;flex-direction:column;gap:9px;margin:18px 0 22px}
+  .m-item{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;display:flex;align-items:center;gap:12px;
+    animation:rise .4s both;
+  }
+  .m-item .dot{flex:none;width:10px;height:26px;border-radius:5px}
+  .m-item .info{flex:1;min-width:0}
+  .m-item .brand{font-size:11.5px;color:var(--cream-dim);letter-spacing:.12em}
+  .m-item .name{font-size:15.5px;font-weight:800;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m-item .fit{flex:none;text-align:right}
+  .m-item .pct{font-size:16px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums}
+  .m-item .bar{width:52px;height:4px;border-radius:2px;background:var(--panel-2);margin-top:5px;overflow:hidden}
+  .m-item .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pearl),var(--gold));border-radius:2px}
+  /* ---------- 拉霸 ---------- */
+  #slot{justify-content:center}
+  .slot-cab{
+    background:linear-gradient(180deg,#31231400,#31231466),var(--panel);
+    border:1.5px solid var(--line);border-radius:22px;
+    padding:22px 18px 24px;margin:20px 0 18px;
+    box-shadow:0 0 50px rgba(255,180,40,.08), inset 0 1px 0 rgba(244,233,214,.07);
+  }
+  .reel-window{
+    position:relative;height:216px;overflow:hidden;border-radius:14px;
+    background:var(--ink);border:1px solid var(--line);
+  }
+  .reel{position:absolute;left:0;right:0;top:0;will-change:transform}
+  .r-item{
+    height:72px;padding:0 18px;
+    display:flex;align-items:center;gap:12px;
+    border-bottom:1px dashed #33261877;
+  }
+  .r-item .dot{flex:none;width:9px;height:24px;border-radius:5px}
+  .r-item .brand{font-size:11px;color:var(--cream-dim);letter-spacing:.1em}
+  .r-item .name{font-size:16.5px;font-weight:800;margin-top:1px}
+  .reel-window::before,.reel-window::after{
+    content:"";position:absolute;left:0;right:0;height:72px;z-index:2;pointer-events:none;
+  }
+  .reel-window::before{top:0;background:linear-gradient(180deg,var(--ink) 8%,transparent)}
+  .reel-window::after{bottom:0;background:linear-gradient(0deg,var(--ink) 8%,transparent)}
+  .payline{
+    position:absolute;z-index:3;left:6px;right:6px;top:71px;height:74px;
+    border:2px solid var(--gold);border-radius:12px;pointer-events:none;
+    box-shadow:0 0 22px rgba(255,180,40,.25), inset 0 0 18px rgba(255,180,40,.07);
+  }
+  .payline::before,.payline::after{
+    content:"";position:absolute;top:50%;width:0;height:0;
+    border:7px solid transparent;transform:translateY(-50%);
+  }
+  .payline::before{left:-16px;border-left-color:var(--gold)}
+  .payline::after{right:-16px;border-right-color:var(--gold)}
+  .slot-tip{text-align:center;color:var(--cream-dim);font-size:13px;margin-top:14px;letter-spacing:.05em}
+  #stopBtn.armed{animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 6px 0 rgba(0,0,0,.35),0 0 26px rgba(255,180,40,.2)}50%{box-shadow:0 6px 0 rgba(0,0,0,.35),0 0 46px rgba(255,180,40,.5)}}
+  /* ---------- 結果 ---------- */
+  #result{justify-content:center}
+  .ticket{
+    background:var(--cream);color:var(--ink);
+    border-radius:18px;overflow:hidden;margin:16px 0 20px;
+    box-shadow:0 18px 50px rgba(0,0,0,.5);
+    animation:stamp .45s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes stamp{from{opacity:0;transform:scale(.92) rotate(-1.5deg)}to{opacity:1;transform:none}}
+  .ticket .band{height:10px}
+  .ticket .body{padding:22px 22px 20px}
+  .ticket .brand-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .ticket .brand{font-size:13px;font-weight:700;letter-spacing:.22em;color:#6b5335}
+  .ticket .price{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+  .ticket .price small{font-size:13px;font-weight:700;margin-right:2px}
+  .ticket h2{font-size:31px;font-weight:900;letter-spacing:.03em;line-height:1.25;margin:8px 0 6px;text-wrap:balance}
+  .ticket .desc{font-size:13.5px;color:#5d4a30;line-height:1.65}
+  .ticket .divider{
+    position:relative;margin:16px 0;height:0;border-top:2px dashed #d3c2a4;
+  }
+  .spec{display:flex;gap:10px}
+  .spec .cell{
+    flex:1;background:#EADDC4;border-radius:10px;padding:10px 12px;
+  }
+  .spec .k{font-size:10.5px;letter-spacing:.18em;color:#8a6f47;font-weight:700}
+  .spec .v{font-size:15px;font-weight:900;margin-top:3px;font-variant-numeric:tabular-nums}
+  .why{
+    margin-top:12px;background:#EADDC4;border-radius:10px;padding:10px 12px;
+    font-size:12.5px;color:#5d4a30;line-height:1.6;
+  }
+  .why b{color:var(--ink)}
+  .result-actions{display:flex;flex-direction:column;gap:10px}
+  .row2{display:flex;gap:10px}
+  .row2 .btn{flex:1}
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);
+    background:var(--gold);color:var(--ink);font-weight:800;font-size:14px;
+    padding:11px 20px;border-radius:999px;z-index:9;
+    transition:transform .3s cubic-bezier(.2,.9,.3,1.2);pointer-events:none;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  footer{margin-top:26px;text-align:center;font-size:11.5px;color:#6b573c;letter-spacing:.1em;line-height:1.8}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+
+<canvas id="pearls" aria-hidden="true"></canvas>
+
+<div class="frame">
+
+  <!-- 開場 -->
+  <section class="screen on" id="intro" aria-label="開始">
+    <div class="signboard">
+      <div class="eyebrow">TAIWAN TEA SLOT</div>
+      <h1>今天<br>喝<em>什麼</em>？</h1>
+      <p class="sub">回答四個問題，從 36 款台灣手搖飲裡<br>撈出你的命中菜單，最後一杯——自己按停。</p>
+      <div class="marquee" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <button class="btn" id="startBtn">開始點餐</button>
+    <p class="intro-note">先問口味再抽，不是純隨機</p>
+  </section>
+
+  <!-- 問答 -->
+  <section class="screen" id="quiz" aria-label="口味問答">
+    <div class="quiz-head">
+      <div class="eyebrow" id="qStep">Q1 / 4</div>
+      <div class="cup-progress" id="qDots"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <h2 class="q-title" id="qTitle"></h2>
+    <p class="q-hint" id="qHint"></p>
+    <div class="opts" id="qOpts"></div>
+  </section>
+
+  <!-- 命中菜單 -->
+  <section class="screen" id="menu" aria-label="命中菜單">
+    <div class="eyebrow">YOUR MENU</div>
+    <h2 class="q-title">你的命中菜單</h2>
+    <p class="q-hint" id="menuHint"></p>
+    <div class="menu-list" id="menuList"></div>
+    <button class="btn" id="toSlotBtn">進拉霸機，抽一杯</button>
+    <button class="btn ghost" id="redoBtn1" style="margin-top:10px">重新回答</button>
+  </section>
+
+  <!-- 拉霸 -->
+  <section class="screen" id="slot" aria-label="拉霸機">
+    <div class="eyebrow" style="text-align:center">LUCKY CUP</div>
+    <h2 class="q-title" style="text-align:center">手氣時間</h2>
+    <div class="slot-cab">
+      <div class="reel-window">
+        <div class="reel" id="reel"></div>
+        <div class="payline" aria-hidden="true"></div>
+      </div>
+      <p class="slot-tip" id="slotTip">匹配度越高的，出現次數越多</p>
+    </div>
+    <button class="btn armed" id="stopBtn">停！</button>
+  </section>
+
+  <!-- 結果 -->
+  <section class="screen" id="result" aria-label="結果">
+    <div class="eyebrow" style="text-align:center">ORDER UP</div>
+    <div class="ticket" id="ticket"></div>
+    <div class="result-actions">
+      <button class="btn" id="copyBtn">複製結果去揪人</button>
+      <div class="row2">
+        <button class="btn ghost" id="respinBtn">再抽一次</button>
+        <button class="btn ghost" id="redoBtn2">重新回答</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>價格為大杯參考價，依門市為準<br>TAIWAN TEA SLOT・今天喝什麼</footer>
+</div>
+
+<div class="toast" id="toast">已複製，貼去群組吧</div>
+
+<script>
+/* ============ 資料：台灣手搖飲 ============ */
+/* mood: comfort 療癒 / fresh 清爽 / awake 提神 / light 輕負擔
+   base: milk 奶 / tea 純茶 / fruit 果茶 / special 特調
+   top:  true 有加料 */
+const BRANDS = {
+  "50嵐":"#F8CF1B","可不可":"#8E2A2A","迷客夏":"#1E8A4C","清心福全":"#37A05B",
+  "麻古茶坊":"#D2352B","得正":"#2E5FA3","珍煮丹":"#C89B3C","五桐號":"#6E8F7C",
+  "龜記":"#1F6B52","一沐日":"#4C6B4F","鶴茶樓":"#B03A3F","茶湯會":"#7B4B8E",
+  "萬波":"#2C4B7C","大苑子":"#2F8C46"
+};
+const DRINKS = [
+  {b:"50嵐",n:"波霸奶茶",p:60,base:"milk",mood:["comfort"],top:true,caf:2,rec:"半糖・少冰",d:"台式經典基準線，波霸咬感十足"},
+  {b:"50嵐",n:"四季春珍波椰",p:50,base:"tea",mood:["fresh","comfort"],top:true,caf:1,rec:"半糖・少冰",d:"清香茶底配三種料，嚼到停不下來"},
+  {b:"50嵐",n:"８冰綠",p:45,base:"tea",mood:["fresh"],top:false,caf:1,rec:"微糖・去冰",d:"檸檬冰綠，酸香醒脾的老朋友"},
+  {b:"50嵐",n:"冰淇淋紅茶",p:50,base:"special",mood:["comfort"],top:false,caf:1,rec:"固定甜度",d:"紅茶上漂一球冰淇淋，邪惡但值得"},
+  {b:"可不可",n:"熟成紅茶",p:35,base:"tea",mood:["awake","light"],top:false,caf:2,rec:"無糖・去冰",d:"焙香厚實，無糖也很有戲"},
+  {b:"可不可",n:"白玉歐蕾",p:60,base:"milk",mood:["comfort"],top:true,caf:1,rec:"半糖・少冰",d:"奶香配白玉珍珠，可不可的招牌臉"},
+  {b:"可不可",n:"熟成歐蕾",p:55,base:"milk",mood:["comfort","awake"],top:false,caf:2,rec:"微糖・少冰",d:"熟成紅茶加鮮奶，茶味不被蓋掉"},
+  {b:"可不可",n:"春芽冷露",p:45,base:"tea",mood:["fresh","light"],top:false,caf:1,rec:"微糖・少冰",d:"綠茶清露，喝起來像散步的風"},
+  {b:"迷客夏",n:"大甲芋頭鮮奶",p:75,base:"milk",mood:["comfort"],top:true,caf:0,rec:"微糖・去冰",d:"真芋頭泥，綿密到像甜點"},
+  {b:"迷客夏",n:"珍珠紅茶拿鐵",p:65,base:"milk",mood:["comfort"],top:true,caf:1,rec:"半糖・少冰",d:"牧場鮮奶配珍珠，安全牌中的高分卷"},
+  {b:"迷客夏",n:"綠光鮮奶茶",p:60,base:"milk",mood:["comfort","light"],top:false,caf:1,rec:"微糖・少冰",d:"自家牧場鮮奶，順口不膩"},
+  {b:"迷客夏",n:"冬瓜仙草鮮奶",p:60,base:"milk",mood:["light","comfort"],top:true,caf:0,rec:"無糖・去冰",d:"仙草凍滑溜，無咖啡因晚上也能喝"},
+  {b:"清心福全",n:"珍珠奶茶",p:55,base:"milk",mood:["comfort"],top:true,caf:2,rec:"半糖・少冰",d:"巷口安定感，永遠不會出錯"},
+  {b:"清心福全",n:"冬瓜青",p:40,base:"tea",mood:["fresh","light"],top:false,caf:1,rec:"固定甜度・少冰",d:"冬瓜香配青茶，古早味的清爽"},
+  {b:"清心福全",n:"多多綠",p:55,base:"fruit",mood:["fresh"],top:false,caf:1,rec:"半糖・微冰",d:"養樂多氣息，酸酸甜甜很欠喝"},
+  {b:"麻古茶坊",n:"楊枝甘露 2.0",p:85,base:"fruit",mood:["comfort","fresh"],top:true,caf:0,rec:"固定甜度",d:"芒果柚子西米露，一杯像甜品店"},
+  {b:"麻古茶坊",n:"芝芝芒果果粒",p:90,base:"fruit",mood:["comfort"],top:true,caf:0,rec:"固定甜度",d:"奶蓋配當季芒果，夏天限定的奢侈"},
+  {b:"麻古茶坊",n:"百香雙響炮",p:65,base:"fruit",mood:["fresh"],top:true,caf:1,rec:"半糖・少冰",d:"百香果配椰果珍珠，咬感跟酸香都有"},
+  {b:"麻古茶坊",n:"梅露青",p:50,base:"tea",mood:["fresh","light"],top:false,caf:1,rec:"微糖・少冰",d:"脆梅配青茶，回甘系"},
+  {b:"得正",n:"焙香決明大麥",p:25,base:"tea",mood:["light"],top:false,caf:0,rec:"無糖",d:"無咖啡因、麥香濃，深夜友善"},
+  {b:"得正",n:"輕烏龍",p:35,base:"tea",mood:["light","fresh"],top:false,caf:1,rec:"無糖・少冰",d:"得正的立身之本，清清爽爽"},
+  {b:"得正",n:"奶霜輕烏龍",p:55,base:"special",mood:["comfort"],top:false,caf:1,rec:"微糖・少冰",d:"鹹奶霜蓋在烏龍上，先苦後甜"},
+  {b:"得正",n:"紅烏龍鮮奶茶",p:60,base:"milk",mood:["comfort","awake"],top:false,caf:2,rec:"微糖・少冰",d:"焙火紅烏龍配鮮奶，茶感很清醒"},
+  {b:"珍煮丹",n:"黑糖珍珠鮮奶",p:75,base:"milk",mood:["comfort"],top:true,caf:0,rec:"固定甜度・微冰",d:"掛壁黑糖配熱珍珠，療癒天花板"},
+  {b:"五桐號",n:"杏仁凍歐蕾",p:65,base:"milk",mood:["comfort"],top:true,caf:1,rec:"微糖・去冰",d:"杏仁凍滑進奶茶裡，香氣很立體"},
+  {b:"五桐號",n:"冬瓜檸檬露",p:55,base:"fruit",mood:["fresh"],top:true,caf:0,rec:"固定甜度・少冰",d:"冬瓜檸檬加寒天，消暑職人款"},
+  {b:"龜記",n:"紅柚翡翠",p:60,base:"fruit",mood:["fresh"],top:true,caf:1,rec:"微糖・微冰",d:"整顆葡萄柚果肉，酸甜有存在感"},
+  {b:"一沐日",n:"粉粿蔗香紅茶",p:50,base:"tea",mood:["comfort"],top:true,caf:1,rec:"半糖・少冰",d:"手工粉粿配蔗香，台味十足"},
+  {b:"一沐日",n:"太極粉粿鮮奶",p:65,base:"milk",mood:["comfort"],top:true,caf:0,rec:"微糖・去冰",d:"黑糖粉粿雙色，口感控會愛"},
+  {b:"鶴茶樓",n:"鶴頂紅茶牛奶",p:55,base:"milk",mood:["awake","comfort"],top:false,caf:2,rec:"微糖・少冰",d:"重焙紅茶配牛奶，下午續命用"},
+  {b:"茶湯會",n:"珍珠觀音拿鐵",p:65,base:"milk",mood:["comfort"],top:true,caf:1,rec:"半糖・少冰",d:"鐵觀音底的奶茶，尾韻帶焙香"},
+  {b:"茶湯會",n:"熟果翡翠檸檬",p:55,base:"fruit",mood:["fresh"],top:false,caf:1,rec:"微糖・少冰",d:"熟成檸檬不死酸，順口系果茶"},
+  {b:"萬波",n:"紅豆粉粿鮮奶",p:70,base:"milk",mood:["comfort"],top:true,caf:0,rec:"微糖・去冰",d:"蜜紅豆加粉粿，像喝一碗甜湯"},
+  {b:"萬波",n:"島嶼紅茶",p:35,base:"tea",mood:["awake","light"],top:false,caf:2,rec:"無糖・去冰",d:"茶味直球，喝完想開工"},
+  {b:"大苑子",n:"鮮搾柳橙綠",p:70,base:"fruit",mood:["fresh"],top:false,caf:1,rec:"固定甜度・少冰",d:"現搾柳橙看得到果肉"},
+  {b:"大苑子",n:"芭樂檸檬",p:65,base:"fruit",mood:["fresh","light"],top:false,caf:0,rec:"無糖・少冰",d:"土芭樂香氣，維他命 C 擔當"},
+];
+
+/* ============ 問題 ============ */
+const QUESTIONS = [
+  {
+    key:"mood",
+    title:"現在是什麼心情？",
+    hint:"這題權重最高，誠實面對自己",
+    opts:[
+      {v:"comfort",t:"甲",b:"想被療癒",s:"今天辛苦了，甜的奶的都給我來"},
+      {v:"fresh",  t:"乙",b:"想要清爽",s:"熱到融化，來點酸的冰的透心涼"},
+      {v:"awake",  t:"丙",b:"需要提神",s:"下午還有硬仗，咖啡因快上"},
+      {v:"light",  t:"丁",b:"低負擔就好",s:"最近有點罪惡感，無糖無咖啡因優先"},
+    ]
+  },
+  {
+    key:"base",
+    title:"基底想喝哪一掛？",
+    hint:"奶派、茶派、果茶派，今天站哪邊",
+    opts:[
+      {v:"milk", t:"奶",b:"奶的",s:"奶茶、鮮奶茶、歐蕾都算"},
+      {v:"tea",  t:"茶",b:"純茶",s:"紅茶綠茶烏龍，喝茶本人的茶"},
+      {v:"fruit",t:"果",b:"果茶",s:"檸檬芒果葡萄柚，水果掛"},
+      {v:"any",  t:"隨",b:"都可以",s:"交給命運，我不挑基底"},
+    ]
+  },
+  {
+    key:"top",
+    title:"要有料嗎？",
+    hint:"珍珠、粉粿、仙草凍……口感很重要",
+    opts:[
+      {v:"yes",t:"料",b:"要，越 Q 越好",s:"沒有東西咬會空虛"},
+      {v:"no", t:"淨",b:"不要料",s:"順順喝就好，吸管不要塞"},
+      {v:"any",t:"皆",b:"有沒有都行",s:"料是驚喜，不是必需"},
+    ]
+  },
+  {
+    key:"price",
+    title:"今天預算開多少？",
+    hint:"大杯參考價",
+    opts:[
+      {v:"cheap", t:"$",b:"銅板價",s:"45 元以內解決"},
+      {v:"mid",   t:"$$",b:"正常發揮",s:"一杯 70 內都合理"},
+      {v:"treat", t:"$$$",b:"犒賞自己",s:"旗艦款來，錢不是問題"},
+    ]
+  },
+];
+
+/* ============ 計分（不是隨機） ============ */
+function scoreDrink(dr, a){
+  let s = 0;
+  if (dr.mood[0] === a.mood) s += 3;                   // 主打心情
+  else if (dr.mood.includes(a.mood)) s += 2;           // 副心情
+  if (a.mood === "awake" && dr.caf === 2) s += 1;      // 提神加成
+  if (a.mood === "light" && dr.caf === 0) s += 1;      // 低負擔加成
+  if (a.base === "any") s += 2;
+  else if (dr.base === a.base) s += 3;
+  else if (a.base === "milk" && dr.base === "special") s += 1;
+  if (a.top === "any") s += 1;
+  else if ((a.top === "yes") === dr.top) s += 2;
+  // 價格用「離理想價的距離」連續計分，讓匹配度有真實梯度
+  const ideal = {cheap:35, mid:55, treat:80}[a.price];
+  s += Math.max(0, 2 - Math.abs(dr.p - ideal) / 25);
+  if (a.price === "cheap" && dr.p > 60) s -= 2;
+  return Math.max(0, s);
+}
+function maxScore(a){
+  return (a.mood==="awake"||a.mood==="light" ? 4 : 3)
+       + (a.base==="any" ? 2 : 3)
+       + (a.top==="any" ? 1 : 2) + 2;
+}
+function reasonText(dr, a){
+  const hits = [];
+  const moodName = {comfort:"療癒系",fresh:"清爽系",awake:"提神系",light:"低負擔"}[a.mood];
+  if (dr.mood.includes(a.mood)) hits.push(moodName);
+  const baseName = {milk:"奶類",tea:"純茶",fruit:"果茶"}[a.base];
+  if (a.base!=="any" && dr.base===a.base) hits.push(baseName+"掛");
+  if (a.top==="yes" && dr.top) hits.push("有料可咬");
+  if (a.top==="no" && !dr.top) hits.push("無料順喝");
+  if (a.price==="cheap" && dr.p<=45) hits.push("銅板價");
+  if (a.price==="treat" && dr.p>=65) hits.push("犒賞級");
+  if (a.mood==="awake" && dr.caf===2) hits.push("咖啡因滿格");
+  if (a.mood==="light" && dr.caf===0) hits.push("零咖啡因");
+  return hits.length ? hits.join("・") : "口味外的野生候補";
+}
+
+/* ============ 狀態與畫面切換 ============ */
+const $ = id => document.getElementById(id);
+const answers = {};
+let qi = 0, candidates = [], reelItems = [], currentPick = null;
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
+  $(id).classList.add("on");
+  window.scrollTo({top:0});
+}
+
+/* ---- 問答 ---- */
+function renderQ(){
+  const q = QUESTIONS[qi];
+  $("qStep").textContent = `Q${qi+1} / ${QUESTIONS.length}`;
+  $("qTitle").textContent = q.title;
+  $("qHint").textContent = q.hint;
+  [...$("qDots").children].forEach((d,i)=>{
+    d.className = i < qi ? "full" : (i === qi ? "now" : "");
+  });
+  const box = $("qOpts");
+  box.innerHTML = "";
+  q.opts.forEach(o=>{
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.innerHTML = `<span class="tag">${o.t}</span><span><b>${o.b}</b><span>${o.s}</span></span>`;
+    btn.onclick = ()=>{
+      btn.classList.add("picked");
+      answers[q.key] = o.v;
+      setTimeout(()=>{
+        qi++;
+        if (qi < QUESTIONS.length) renderQ();
+        else buildMenu();
+      }, 240);
+    };
+    box.appendChild(btn);
+  });
+}
+
+/* ---- 命中菜單 ---- */
+function buildMenu(){
+  const mx = maxScore(answers);
+  candidates = DRINKS
+    .map(d => ({...d, score:scoreDrink(d,answers)}))
+    .sort((a,b)=> b.score - a.score || a.p - b.p)
+    .slice(0, 7)
+    .map(d => ({...d, pct: Math.min(99, Math.round(d.score / mx * 100))}));
+  $("menuHint").textContent = `從 ${DRINKS.length} 款裡撈出 ${candidates.length} 杯，匹配度越高、拉霸出現越多次`;
+  const list = $("menuList");
+  list.innerHTML = "";
+  candidates.forEach((c,i)=>{
+    const el = document.createElement("div");
+    el.className = "m-item";
+    el.style.animationDelay = (i*0.06)+"s";
+    el.innerHTML = `
+      <span class="dot" style="background:${BRANDS[c.b]}"></span>
+      <span class="info"><span class="brand">${c.b}</span><span class="name">${c.n}</span></span>
+      <span class="fit"><span class="pct">${c.pct}%</span><span class="bar"><i style="width:${c.pct}%"></i></span></span>`;
+    list.appendChild(el);
+  });
+  show("menu");
+}
+
+/* ---- 拉霸 ---- */
+const ITEM_H = 72;
+let reelY = 0, vel = 0, spinning = false, stopping = false, rafId = 0;
+
+function buildReel(){
+  // 依分數加權：分數平方 → 次數，高分至少 2 次
+  reelItems = [];
+  candidates.forEach(c=>{
+    const w = Math.max(1, Math.round((c.score * c.score) / (candidates[0].score || 1)));
+    for (let k=0; k<Math.min(w,5); k++) reelItems.push(c);
+  });
+  // 洗牌但避免同款相鄰
+  for (let i=reelItems.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [reelItems[i],reelItems[j]] = [reelItems[j],reelItems[i]];
+  }
+  for (let i=1; i<reelItems.length; i++){
+    if (reelItems[i].n === reelItems[i-1].n){
+      const j = (i+1) % reelItems.length;
+      [reelItems[i],reelItems[j]] = [reelItems[j],reelItems[i]];
+    }
+  }
+  const reel = $("reel");
+  reel.innerHTML = "";
+  // 畫兩輪方便無縫循環
+  [...reelItems, ...reelItems].forEach(c=>{
+    const el = document.createElement("div");
+    el.className = "r-item";
+    el.innerHTML = `<span class="dot" style="background:${BRANDS[c.b]}"></span>
+      <span><span class="brand">${c.b}</span><br><span class="name">${c.n}</span></span>`;
+    reel.appendChild(el);
+  });
+}
+
+function startSpin(){
+  buildReel();
+  show("slot");
+  $("slotTip").textContent = "匹配度越高的，出現次數越多——看準了按停";
+  $("stopBtn").disabled = false;
+  $("stopBtn").classList.add("armed");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced){
+    // 減少動態：直接定格在加權隨機的一格
+    const idx = Math.floor(Math.random()*reelItems.length);
+    reelY = idx * ITEM_H - ITEM_H;
+    $("reel").style.transform = `translateY(${-mod(reelY, reelItems.length*ITEM_H)}px)`;
+    $("slotTip").textContent = "已為你定格，按「停」確認這杯";
+    spinning = false;
+    return;
+  }
+  reelY = 0; vel = 26; spinning = true; stopping = false;
+  cancelAnimationFrame(rafId);
+  tick();
+}
+function mod(n,m){ return ((n % m) + m) % m }
+function tick(){
+  const total = reelItems.length * ITEM_H;
+  if (spinning){
+    if (stopping){
+      vel *= 0.955;
+      if (vel < 1.2){
+        // 貼齊最近的格線（讓中獎格置中：offset ITEM_H）
+        const target = Math.round((reelY + ITEM_H) / ITEM_H) * ITEM_H - ITEM_H;
+        reelY += (target - reelY) * 0.22;
+        if (Math.abs(target - reelY) < 0.5){
+          reelY = target; spinning = false;
+          settle();
+        }
+      }
+    }
+    reelY += vel;
+  }
+  $("reel").style.transform = `translateY(${-mod(reelY, total)}px)`;
+  if (spinning) rafId = requestAnimationFrame(tick);
+}
+function settle(){
+  const idx = mod(Math.round(reelY / ITEM_H) + 1, reelItems.length);
+  currentPick = reelItems[idx];
+  setTimeout(()=> renderResult(currentPick), 550);
+}
+$("stopBtn").onclick = ()=>{
+  if (!spinning){
+    // 減少動態模式：直接出結果
+    const idx = mod(Math.round(reelY / ITEM_H) + 1, reelItems.length);
+    renderResult(reelItems[idx]);
+    return;
+  }
+  if (stopping) return;
+  stopping = true;
+  $("stopBtn").disabled = true;
+  $("stopBtn").classList.remove("armed");
+  $("slotTip").textContent = "收線中……";
+};
+
+/* ---- 結果 ---- */
+function renderResult(c){
+  currentPick = c;
+  const t = $("ticket");
+  t.innerHTML = `
+    <div class="band" style="background:${BRANDS[c.b]}"></div>
+    <div class="body">
+      <div class="brand-row">
+        <span class="brand">${c.b}</span>
+        <span class="price"><small>NT$</small>${c.p}</span>
+      </div>
+      <h2>${c.n}</h2>
+      <p class="desc">${c.d}</p>
+      <div class="divider"></div>
+      <div class="spec">
+        <div class="cell"><div class="k">建議甜冰</div><div class="v">${c.rec}</div></div>
+        <div class="cell"><div class="k">匹配度</div><div class="v">${c.pct}%</div></div>
+      </div>
+      <div class="why"><b>為什麼是它：</b>${reasonText(c, answers)}</div>
+    </div>`;
+  show("result");
+}
+$("copyBtn").onclick = async ()=>{
+  const c = currentPick;
+  const text = `今天喝這杯：${c.b}「${c.n}」（${c.rec}）NT$${c.p}，匹配度 ${c.pct}%。有人要跟單嗎？`;
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  const toast = $("toast");
+  toast.classList.add("show");
+  setTimeout(()=> toast.classList.remove("show"), 1800);
+};
+$("respinBtn").onclick = startSpin;
+$("redoBtn1").onclick = $("redoBtn2").onclick = ()=>{ qi = 0; renderQ(); show("quiz"); };
+$("startBtn").onclick = ()=>{ qi = 0; renderQ(); show("quiz"); };
+$("toSlotBtn").onclick = startSpin;
+
+/* ============ 背景珍珠 ============ */
+(function(){
+  const cv = $("pearls"), ctx = cv.getContext("2d");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W, H, dots = [];
+  function size(){
+    W = cv.width = innerWidth * devicePixelRatio;
+    H = cv.height = innerHeight * devicePixelRatio;
+    cv.style.width = innerWidth+"px"; cv.style.height = innerHeight+"px";
+  }
+  function init(){
+    dots = Array.from({length:26}, ()=>({
+      x: Math.random()*W, y: Math.random()*H,
+      r: (4+Math.random()*9)*devicePixelRatio,
+      v: (0.15+Math.random()*0.4)*devicePixelRatio,
+      o: 0.12+Math.random()*0.25
+    }));
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    for (const p of dots){
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,7);
+      ctx.fillStyle = `rgba(138,90,51,${p.o})`;
+      ctx.fill();
+      if (!reduced){
+        p.y -= p.v;
+        if (p.y < -20) { p.y = H+20; p.x = Math.random()*W; }
+      }
+    }
+    if (!reduced) requestAnimationFrame(draw);
+  }
+  addEventListener("resize", ()=>{ size(); init(); if(reduced) draw(); });
+  size(); init(); draw();
+})();
+</script>
+</body>
+</html>
