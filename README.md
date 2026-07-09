@@ -2,4 +2,4 @@
 
 台灣手搖飲的遊戲化選擇器：四題口味問答 → 36 款真實品項計分 → 命中菜單 → 自己按停的拉霸機。
 
-Live: https://joannecucumber.github.io/drink-slot/
+Live: https://drink-slot.vercel.app
